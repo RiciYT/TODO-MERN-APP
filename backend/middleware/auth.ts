@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { requireEnv } from '../config/env';
 
 const userMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -17,17 +18,7 @@ const userMiddleware = (req: Request, res: Response, next: NextFunction) => {
       return;
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      console.error('JWT_SECRET is not defined in environment variables');
-      res.status(500).json({ error: 'Internal server error' });
-      return;
-    }
-
-    const decoded: jwt.JwtPayload | string = jwt.verify(
-      token,
-      jwtSecret
-    );
+    const decoded: jwt.JwtPayload | string = jwt.verify(token, requireEnv('JWT_SECRET'));
 
     if (!decoded) {
       res.status(401).json({ error: 'Unauthorized' });
@@ -36,7 +27,13 @@ const userMiddleware = (req: Request, res: Response, next: NextFunction) => {
 
     req.body.email = (decoded as jwt.JwtPayload).email;
     next();
-  } catch (e) {
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Missing required environment variable')) {
+      console.error(error.message);
+      res.status(500).json({ error: 'Server configuration error' });
+      return;
+    }
+
     res.status(401).json({ error: 'Unauthorized' });
   }
 }

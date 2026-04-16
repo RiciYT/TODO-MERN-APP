@@ -4,24 +4,27 @@ import cors from "cors";
 import dotenv from "dotenv";
 import todoRouter from "./routes/todo";
 import userRouter from "./routes/user";
+import { optionalEnv, requireEnv } from "./config/env";
 
 dotenv.config();
 
 const app = express();
-const port = 3001;
+const port = Number(process.env.PORT ?? 3001);
 mongoose
-  .connect(process.env.DB_URL as string, { dbName: "todo-mern-app" })
+  .connect(requireEnv("DB_URL"), { dbName: "todo-mern-app" })
   .then(() => {
     console.log("Connected to DB:", mongoose.connection.db?.databaseName);
+  })
+  .catch((error) => {
+    console.error("MongoDB connection failed:", error);
   });
 
 app.use((req, res, next) => {
   console.log("Received request:", req.method, req.url);
-  console.log(".env", process.env.FRONTEND_URL);
   next();
 });
 
-const frontendUrl = process.env.FRONTEND_URL;
+const frontendUrl = optionalEnv("FRONTEND_URL");
 if (!frontendUrl) {
   console.warn("WARNUNG: FRONTEND_URL ist nicht definiert. CORS ist möglicherweise nicht korrekt konfiguriert.");
 }
