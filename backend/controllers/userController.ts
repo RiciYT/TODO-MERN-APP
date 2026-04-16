@@ -6,37 +6,38 @@ import { requireEnv } from "../config/env";
 
 // User Routes
 const userSignup = async (req: Request, res: Response) => {
-  // Implemented user signup logic
-  const { email, username, password } = req.body;
+  try {
+    const { email, username, password } = req.body;
 
-  //checking if email already exists
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    res.status(400).json({ error: "Email already exists" });
-    return;
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      res.status(400).json({ error: "Email already exists" });
+      return;
+    }
+
+    if (password.length < 6) {
+      res.status(400).json({ error: "Password must be at least 6 characters" });
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await User.create({ email, username, password: hashedPassword });
+    res.status(200).json({ message: "User created successfully" });
+  } catch (error) {
+    console.error("Signup failed:", error);
+    res.status(500).json({ error: "Database connection error" });
   }
-
-  if (password.length < 6) {
-    res.status(400).json({ error: "Password must be at least 6 characters" });
-    return;
-  }
-
-  //hashing the password, so it can be stored in mongoDB
-  const hashedPassword = await bcrypt.hash(password, 10);
-  //creating the user
-  await User.create({ email, username, password: hashedPassword });
-  res.status(200).json({ message: "User created successfully" });
 };
 
 const userSignin = async (req: Request, res: Response) => {
-  // Implemented user signin logic
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  //checking if email already exists
-  const user = await User.findOne({ email });
-  if (!user) return res.status(401).json({ error: "User does not exist!" });
-  else {
-    //checking if password is correct
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ error: "User does not exist!" });
+    }
+
     const passwordValidates = await bcrypt.compare(
       password,
       user.password as string
@@ -50,23 +51,36 @@ const userSignin = async (req: Request, res: Response) => {
         console.error("JWT setup error:", error);
         return res.status(500).json({ error: "Server configuration error" });
       }
-    } else return res.status(401).json({ error: "Wrong email or password" });
+    } else {
+      return res.status(401).json({ error: "Wrong email or password" });
+    }
+  } catch (error) {
+    console.error("Signin failed:", error);
+    res.status(500).json({ error: "Database connection error" });
   }
 };
 
 const getUser = async (req: Request, res: Response) => {
-  // console.log(req.body);
-  if (req.body.email) {
-    const user = await User.findOne({ email: req.body.email });
-    if (user) {
-      return res
-        .status(200)
-        .json({ email: req.body.email, username: user.username });
-    } else {
-      return res.status(401).json({ error: "Unauthorized" });
+  try {
+    if (req.body.email) {
+      const user = await User.findOne({ email: req.body.email });
+      if (user) {
+        return res
+          .status(200)
+          .json({ email: req.body.email, username: user.username });
+      } else {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
     }
+    return res.status(401).json({ error: "Unauthorized" });
+  } catch (error) {
+    console.error("Get user failed:", error);
+    if (error instanceof Error && error.message.startsWith("Missing required environment variable")) {
+      return res.status(500).json({ error: "Server configuration error" });
+    }
+
+    return res.status(500).json({ error: "Database connection error" });
   }
-  return res.status(401).json({ error: "Unauthorized" });
 };
 
 export { userSignup, userSignin, getUser };

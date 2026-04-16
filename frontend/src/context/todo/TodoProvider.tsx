@@ -1,4 +1,4 @@
-import { ReactNode, useReducer } from 'react';
+import { ReactNode, useCallback, useMemo, useReducer } from 'react';
 import axios, { AxiosError } from 'axios';
 
 import {
@@ -36,11 +36,11 @@ const TodoProvider = ({ children }: TodoProviderProps) => {
 
   const url = import.meta.env.VITE_BACKEND_URL;
 
-  const getErrorMessage = (err: unknown) =>
+  const getErrorMessage = useCallback((err: unknown) =>
     (err as AxiosError<TodoErrorResponse>).response?.data?.error ??
-    'Request failed';
+    'Request failed', []);
 
-  const getTodos = async () => {
+  const getTodos = useCallback(async () => {
     try {
       if (localStorage.token) {
         setAuthToken(localStorage.token);
@@ -58,9 +58,9 @@ const TodoProvider = ({ children }: TodoProviderProps) => {
         payload: getErrorMessage(err),
       });
     }
-  };
+  }, [getErrorMessage, url]);
 
-  const createTodo = async (todo: Todo) => {
+  const createTodo = useCallback(async (todo: Todo) => {
     try {
       if (localStorage.token) {
         setAuthToken(localStorage.token);
@@ -85,9 +85,9 @@ const TodoProvider = ({ children }: TodoProviderProps) => {
         payload: getErrorMessage(err),
       });
     }
-  };
+  }, [getErrorMessage, url]);
 
-  const deleteTodo = async (id: string) => {
+  const deleteTodo = useCallback(async (id: string) => {
     try {
       if (localStorage.token) {
         setAuthToken(localStorage.token);
@@ -106,9 +106,9 @@ const TodoProvider = ({ children }: TodoProviderProps) => {
         payload: getErrorMessage(err),
       });
     }
-  };
+  }, [getErrorMessage, url]);
 
-  const markComplete = async (id: string) => {
+  const markComplete = useCallback(async (id: string) => {
     try {
       if (localStorage.token) {
         setAuthToken(localStorage.token);
@@ -126,28 +126,38 @@ const TodoProvider = ({ children }: TodoProviderProps) => {
         payload: getErrorMessage(err),
       });
     }
-  };
+  }, [getErrorMessage, url]);
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     dispatch({
       type: CLEAR_ERROR,
     });
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    todoLoading: state.todoLoading,
+    loading: state.loading,
+    todos: state.todos,
+    error: state.error,
+    createTodo,
+    markComplete,
+    clearError,
+    getTodos,
+    deleteTodo,
+  }), [
+    clearError,
+    createTodo,
+    deleteTodo,
+    getTodos,
+    markComplete,
+    state.error,
+    state.loading,
+    state.todoLoading,
+    state.todos,
+  ]);
 
   return (
-    <TodoContext.Provider
-      value={{
-        todoLoading: state.todoLoading,
-        loading: state.loading,
-        todos: state.todos,
-        error: state.error,
-        createTodo,
-        markComplete,
-        clearError,
-        getTodos,
-        deleteTodo,
-      }}
-    >
+    <TodoContext.Provider value={value}>
       {children}
     </TodoContext.Provider>
   );

@@ -4,20 +4,13 @@ import cors from "cors";
 import dotenv from "dotenv";
 import todoRouter from "./routes/todo";
 import userRouter from "./routes/user";
-import { optionalEnv, requireEnv } from "./config/env";
+import { optionalEnv } from "./config/env";
+import { connectToDatabase } from "./config/database";
 
 dotenv.config();
 
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
-mongoose
-  .connect(requireEnv("DB_URL"), { dbName: "todo-mern-app" })
-  .then(() => {
-    console.log("Connected to DB:", mongoose.connection.db?.databaseName);
-  })
-  .catch((error) => {
-    console.error("MongoDB connection failed:", error);
-  });
 
 app.use((req, res, next) => {
   console.log("Received request:", req.method, req.url);
@@ -37,6 +30,15 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(async (_req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (error) {
+    console.error("MongoDB connection failed:", error);
+    res.status(500).json({ error: "Database connection error" });
+  }
+});
 
 app.use("/todos", todoRouter);
 app.use("/user", userRouter);
