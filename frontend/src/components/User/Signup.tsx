@@ -1,20 +1,24 @@
-import { useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import toast, { Toaster } from 'react-hot-toast';
+import { FormEvent, useContext, useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, CheckCheck, UserRoundPlus } from 'lucide-react';
+import { toast } from 'sonner';
 
-//components imports
-import Button from '../common/Button';
-import Input from '../common/Input';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import AuthContext from '@/context/auth/AuthContext';
+import { User, UserState } from '@/types/user';
 
-//types imports
-import { User, UserState } from '../../types/user';
-
-//context imports
-import AuthContext from '../../context/auth/AuthContext';
-
-const Signup = ({ context: path }: any) => {
+const Signup = () => {
   const navigate = useNavigate();
-
   const [user, setUser] = useState<User>({
     email: '',
     password: '',
@@ -33,36 +37,21 @@ const Signup = ({ context: path }: any) => {
       user.confirmPassword === '' ||
       user.username === ''
     ) {
-      toast.error('Please fill all the fields', {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
-      });
+      toast.error('Fill in every field before continuing.');
       return false;
     }
 
     if (user.password !== user.confirmPassword) {
-      toast.error('Passwords do not match', {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
-      });
+      toast.error('Passwords do not match.');
       return false;
     }
 
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const loadingToast = toast.loading('Signing Up...', {
-      style: {
-        background: '#333',
-        color: '#fff',
-      },
-    });
+    const loadingToast = toast.loading('Creating your account...');
     if (!checkValid()) {
       toast.dismiss(loadingToast);
       return;
@@ -70,47 +59,21 @@ const Signup = ({ context: path }: any) => {
 
     setRegistering(true);
     try {
-      signup &&
-        (await signup({
+      if (signup) {
+        await signup({
           email: user.email,
           password: user.password,
           username: user.username,
-        }));
+        });
+      }
 
       if (!error) {
-        toast.success('Signed Up Successfully', {
-          style: {
-            background: '#333',
-            color: '#fff',
-          },
-        });
-        console.log('success', error);
+        toast.success('Account created successfully.');
         toast.dismiss(loadingToast);
       }
-    } catch (err: any) {
+    } catch {
       toast.dismiss(loadingToast);
     }
-
-    // if (error) {
-    //   console.log('error', error);
-    //   toast.dismiss(loadingToast);
-    //   toast.error(`${error} <- from signup` || 'Some error occurred', {
-    //     style: {
-    //       background: '#333',
-    //       color: '#fff',
-    //     },
-    //   });
-    // } else {
-    //   toast.success('Signed Up Successfully', {
-    //     style: {
-    //       background: '#333',
-    //       color: '#fff',
-    //     },
-    //   });
-    //   console.log('success', error);
-    //   toast.dismiss(loadingToast);
-    //   navigate('/');
-    // }
   };
 
   const onInputChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,124 +89,134 @@ const Signup = ({ context: path }: any) => {
     if (isRegistered) {
       navigate('/');
     }
-  }, [isRegistered, path]);
+  }, [isRegistered, navigate]);
 
   useEffect(() => {
     if (error) {
       setRegistering(false);
-      toast.error(error, {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
-      });
+      toast.error(error);
       clearError && clearError();
     }
-  }, [error]);
+  }, [clearError, error]);
 
   return (
-    <>
-      <div className='min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8'>
-        <div className='sm:mx-auto sm:w-full sm:max-w-md'>
-          <h2 className='mt-6 text-center text-3xl font-bold text-slate-200'>
-            Sign UP to save your TODOs
-          </h2>
-        </div>
-
-        <div className='mt-8 sm:mx-auto sm:w-full sm:max-w-md'>
-          <div className='bg-gray-600/50 py-8 px-4 shadow sm:rounded-lg sm:px-10'>
-            <div className='flex flex-col gap-6'>
-              <div>
-                <label
-                  htmlFor='email'
-                  className='block text-sm font-medium text-slate-200'
-                >
-                  Username
+    <main className='flex min-h-screen items-center justify-center px-6 py-10'>
+      <div className='grid w-full max-w-5xl gap-6 lg:grid-cols-[0.95fr_1.05fr]'>
+        <Card className='order-2 border-border/80 bg-card/90 lg:order-1'>
+          <CardHeader className='gap-2'>
+            <CardTitle>Create your account</CardTitle>
+            <CardDescription>
+              Add the basics once and use the same workspace every day.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
+              <div className='flex flex-col gap-2'>
+                <label className='text-sm font-medium text-foreground' htmlFor='username'>
+                  Name
                 </label>
-                <div className='mt-1'>
-                  <Input
-                    id='username'
-                    name='username'
-                    type='text'
-                    variant='dark'
-                    onChange={onInputChangeHandler}
-                  />
-                </div>
+                <Input
+                  id='username'
+                  name='username'
+                  onChange={onInputChangeHandler}
+                  type='text'
+                  value={user.username}
+                />
               </div>
-
-              <div>
-                <label
-                  htmlFor='email'
-                  className='block text-sm font-medium text-slate-200'
-                >
-                  Email address
+              <div className='flex flex-col gap-2'>
+                <label className='text-sm font-medium text-foreground' htmlFor='email'>
+                  Email
                 </label>
-                <div className='mt-1'>
-                  <Input
-                    id='email'
-                    name='email'
-                    type='email'
-                    variant='dark'
-                    autoComplete='email'
-                    onChange={onInputChangeHandler}
-                  />
-                </div>
+                <Input
+                  autoComplete='email'
+                  id='email'
+                  name='email'
+                  onChange={onInputChangeHandler}
+                  type='email'
+                  value={user.email}
+                />
               </div>
-              <p className='-mt-4 text-sm text-slate-400'>
-                Only accepting Gmail, Yahoo and Outlook emails
-              </p>
-
-              <div>
-                <label
-                  htmlFor='password'
-                  className='block text-sm font-medium text-gray-200'
-                >
-                  Password
-                </label>
-                <div className='mt-1'>
+              <div className='grid gap-4 sm:grid-cols-2'>
+                <div className='flex flex-col gap-2'>
+                  <label className='text-sm font-medium text-foreground' htmlFor='password'>
+                    Password
+                  </label>
                   <Input
+                    autoComplete='new-password'
                     id='password'
                     name='password'
-                    type='password'
-                    variant='dark'
-                    autoComplete='current-password'
                     onChange={onInputChangeHandler}
+                    type='password'
+                    value={user.password}
                   />
                 </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor='confirm-password'
-                  className='block text-sm font-medium text-gray-200'
-                >
-                  Confirm Password
-                </label>
-                <div className='mt-1'>
+                <div className='flex flex-col gap-2'>
+                  <label className='text-sm font-medium text-foreground' htmlFor='confirmPassword'>
+                    Confirm password
+                  </label>
                   <Input
+                    autoComplete='new-password'
                     id='confirmPassword'
                     name='confirmPassword'
-                    type='password'
-                    variant='dark'
-                    autoComplete='current-password'
                     onChange={onInputChangeHandler}
+                    type='password'
+                    value={user.confirmPassword}
                   />
                 </div>
               </div>
-
-              <div>
-                <Button
-                  text={registering ? 'Signin Up..' : 'Sign Up'}
-                  variant='success'
-                  onClick={handleSubmit}
-                />
+              <Button className='mt-2 w-full' type='submit'>
+                {registering ? 'Creating account...' : 'Create account'}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className='justify-between border-t border-border/80 pt-6 text-sm text-muted-foreground'>
+            <span>Already registered?</span>
+            <Link
+              className='inline-flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:text-muted-foreground'
+              to='/user/signin'
+            >
+              Sign in
+              <ArrowRight className='size-4' />
+            </Link>
+          </CardFooter>
+        </Card>
+        <section className='order-1 flex flex-col justify-between rounded-xl border border-border/80 bg-card/60 p-8 lg:order-2'>
+          <div className='flex flex-col gap-5'>
+            <div className='space-y-3'>
+              <h1 className='text-3xl font-semibold tracking-tight text-foreground'>
+                Create your account and start organizing work
+              </h1>
+              <p className='max-w-xl text-sm leading-6 text-muted-foreground'>
+                Keep the setup short. Name the account, add credentials, and
+                get into the task workspace without extra ceremony.
+              </p>
+            </div>
+            <Separator />
+            <div className='space-y-4'>
+              <div className='rounded-lg border border-border/80 bg-background/70 p-4'>
+                <UserRoundPlus className='mb-3 text-muted-foreground' />
+                <p className='text-sm font-medium text-foreground'>
+                  One clean workspace
+                </p>
+                <p className='mt-1 text-sm text-muted-foreground'>
+                  Account setup and planning stay in the same visual system.
+                </p>
+              </div>
+              <div className='rounded-lg border border-border/80 bg-background/70 p-4'>
+                <CheckCheck className='mb-3 text-muted-foreground' />
+                <p className='text-sm font-medium text-foreground'>
+                  Built for steady use
+                </p>
+                <p className='mt-1 text-sm text-muted-foreground'>
+                  No filler, no onboarding maze, just enough structure to get
+                  started.
+                </p>
               </div>
             </div>
           </div>
-        </div>
+        </section>
       </div>
-      <Toaster />
-    </>
+    </main>
   );
 };
 

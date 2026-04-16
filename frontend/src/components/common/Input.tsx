@@ -10,10 +10,10 @@ type InputProps = {
   variant?: 'primary' | 'danger' | 'success' | 'dark';
   id?: string;
   autoComplete?: 'email' | 'current-password' | 'new-password' | 'off';
-  onChange?: (e: any) => void;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
 };
 
-function classNames(...classes: any) {
+function classNames(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(' ');
 }
 
@@ -35,7 +35,7 @@ const Input = ({
     setInputValue(propInputVal);
   }, [propInputVal]);
 
-  const onInputChangeHandler = (e: any) => {
+  const onInputChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
     onChange && onChange(e);
   };

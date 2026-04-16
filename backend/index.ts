@@ -21,9 +21,14 @@ app.use((req, res, next) => {
   next();
 });
 
+const frontendUrl = process.env.FRONTEND_URL;
+if (!frontendUrl) {
+  console.warn("WARNUNG: FRONTEND_URL ist nicht definiert. CORS ist möglicherweise nicht korrekt konfiguriert.");
+}
+
 app.use(
   cors({
-    origin: [process.env.FRONTEND_URL as string], //or origin: [process.env.FRONTEND_URL as string, 'http://localhost:5173/'],
+    origin: frontendUrl ? [frontendUrl] : ["http://localhost:5173"],
     credentials: true,
   }),
 );

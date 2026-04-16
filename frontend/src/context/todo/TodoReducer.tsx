@@ -6,9 +6,28 @@ import {
   TODO_FAIL,
   SET_LOADING,
   SET_TODO_LOADING,
+  CLEAR_ERROR,
 } from '../types';
+import type { Todo } from '@/types/todo';
 
-export default (state: any, action: any) => {
+type TodoStateShape = {
+  todos: Todo[];
+  loading: boolean;
+  todoLoading: boolean;
+  error: string | null;
+};
+
+type TodoAction =
+  | { type: typeof SET_LOADING }
+  | { type: typeof SET_TODO_LOADING }
+  | { type: typeof GET_TODOS; payload: Todo[] }
+  | { type: typeof CREATE_TODO; payload: Todo }
+  | { type: typeof DELETE_TODO; payload: string }
+  | { type: typeof MARK_COMPLETE; payload: string }
+  | { type: typeof TODO_FAIL; payload: string | null }
+  | { type: typeof CLEAR_ERROR };
+
+function todoReducer(state: TodoStateShape, action: TodoAction): TodoStateShape {
   switch (action.type) {
     case SET_LOADING:
       return {
@@ -39,14 +58,14 @@ export default (state: any, action: any) => {
     case DELETE_TODO:
       return {
         ...state,
-        todos: state.todos.filter((todo: any) => todo._id !== action.payload),
+        todos: state.todos.filter((todo) => todo._id !== action.payload),
         loading: false,
       };
 
     case MARK_COMPLETE:
       return {
         ...state,
-        todos: state.todos.map((todo: any) =>
+        todos: state.todos.map((todo) =>
           todo._id === action.payload ? { ...todo, completed: true } : todo
         ),
         loading: false,
@@ -57,10 +76,18 @@ export default (state: any, action: any) => {
         ...state,
         loading: false,
         todoLoading: false,
-        error: action.payload ? action.payload : null,
+        error: action.payload ?? null,
+      };
+
+    case CLEAR_ERROR:
+      return {
+        ...state,
+        error: null,
       };
 
     default:
       return state;
   }
-};
+}
+
+export default todoReducer;

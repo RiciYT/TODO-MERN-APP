@@ -3,10 +3,10 @@ type ButtonProps = {
   styleClass?: string;
   disabled?: boolean;
   variant?: 'primary' | 'danger' | 'success' | 'dark';
-  onClick?: (e: any) => void;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
 };
 
-function classNames(...classes: any) {
+function classNames(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(' ');
 }
 

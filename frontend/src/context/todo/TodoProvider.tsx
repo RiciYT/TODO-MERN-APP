@@ -1,5 +1,5 @@
-import { useReducer } from 'react';
-import axios from 'axios';
+import { ReactNode, useReducer } from 'react';
+import axios, { AxiosError } from 'axios';
 
 import {
   GET_TODOS,
@@ -16,17 +16,29 @@ import TodoContext from './TodoContext';
 import { Todo } from '../../types/todo';
 import setAuthToken from '../../utils/SetAuthToken';
 
-const TodoProvider = (props: any) => {
+type TodoProviderProps = {
+  children: ReactNode;
+};
+
+type TodoErrorResponse = {
+  error: string;
+};
+
+const TodoProvider = ({ children }: TodoProviderProps) => {
   const initialState = {
-    todos: [],
+    todos: [] as Todo[],
     loading: false,
     todoLoading: false,
-    error: null,
+    error: null as string | null,
   };
 
   const [state, dispatch] = useReducer(TodoReducer, initialState);
 
-  const url = import.meta.env.VITE_BACKEND_URL; //or 'http://localhost:3001';
+  const url = import.meta.env.VITE_BACKEND_URL;
+
+  const getErrorMessage = (err: unknown) =>
+    (err as AxiosError<TodoErrorResponse>).response?.data?.error ??
+    'Request failed';
 
   const getTodos = async () => {
     try {
@@ -34,18 +46,16 @@ const TodoProvider = (props: any) => {
         setAuthToken(localStorage.token);
       }
       dispatch({ type: SET_TODO_LOADING });
-      
+
       const res = await axios.get(url + '/todos');
-      console.log(res.data);
       dispatch({
         type: GET_TODOS,
         payload: res.data.todos,
       });
-    } catch (err: any) {
-      console.log(err.response.data.error);
+    } catch (err: unknown) {
       dispatch({
         type: TODO_FAIL,
-        payload: err.response.data.error,
+        payload: getErrorMessage(err),
       });
     }
   };
@@ -69,11 +79,10 @@ const TodoProvider = (props: any) => {
           createdAt: res.data.todo.createdAt,
         },
       });
-    } catch (err: any) {
-      console.log(err.response.data.error);
+    } catch (err: unknown) {
       dispatch({
         type: TODO_FAIL,
-        payload: err.response.data.error,
+        payload: getErrorMessage(err),
       });
     }
   };
@@ -91,11 +100,10 @@ const TodoProvider = (props: any) => {
         payload: id,
       });
       await axios.delete(url + `/todos/${id}`);
-    } catch (err: any) {
-      console.log(err.response.data.error);
+    } catch (err: unknown) {
       dispatch({
         type: TODO_FAIL,
-        payload: err.response.data.error,
+        payload: getErrorMessage(err),
       });
     }
   };
@@ -112,11 +120,10 @@ const TodoProvider = (props: any) => {
       await axios.put(url + '/todos', {
         id,
       });
-    } catch (err: any) {
-      console.log(err.response.data.error);
+    } catch (err: unknown) {
       dispatch({
         type: TODO_FAIL,
-        payload: err.response.data.error,
+        payload: getErrorMessage(err),
       });
     }
   };
@@ -141,7 +148,7 @@ const TodoProvider = (props: any) => {
         deleteTodo,
       }}
     >
-      {props.children}
+      {children}
     </TodoContext.Provider>
   );
 };

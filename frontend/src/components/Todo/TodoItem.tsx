@@ -1,13 +1,11 @@
-import { Todo } from '../../types/todo';
-import Button from '../common/Button';
+import { CheckCheck, Trash2 } from 'lucide-react';
 
-import binIcon from '../../assets/bin.svg';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Todo } from '@/types/todo';
 
 type CompleteTodoHandler = (id: string) => void;
-
-function classNames(...classes: any) {
-  return classes.filter(Boolean).join(' ');
-}
 
 const TodoItem = ({
   todo,
@@ -21,34 +19,49 @@ const TodoItem = ({
   deleteTodoHandler: CompleteTodoHandler;
 }) => {
   return (
-    <div className='flex items-center justify-between py-2 px-4 rounded-lg bg-gray-700 border border-slate-400 mb-2 gap-4'>
-      <div
-        className={classNames(
-          todo.completed ? 'line-through text-slate-300' : '',
-          'w-[70%] flex items-center gap-4'
-        )}
-      >
-        <p className='font-extrabold uppercase max-w-[25%]'>{todo.title}</p>
-        <p>:</p>
-        <p className='max-w-[60%]'>{todo.description}</p>
-      </div>
-      <div className='flex gap-4 items-center flex-end'>
-        <img
-          src={binIcon}
-          alt='delete'
-          className='w-7 h-7 cursor-pointer'
-          onClick={() => deleteTodoHandler(id)}
-        />
-
-        <Button
-          variant='success'
-          text='Mark as Done'
-          styleClass='w-fit'
-          disabled={todo.completed}
-          onClick={() => markAsDone(id)}
-        ></Button>
-      </div>
-    </div>
+    <Card className='border-border/80 bg-background/70'>
+      <CardContent className='flex flex-col gap-4 p-4 md:flex-row md:items-start md:justify-between'>
+        <div className='flex min-w-0 flex-1 flex-col gap-2'>
+          <div className='flex items-center gap-3'>
+            <h3
+              className={`text-sm font-medium text-foreground ${
+                todo.completed ? 'line-through text-muted-foreground' : ''
+              }`}
+            >
+              {todo.title}
+            </h3>
+            <Badge variant={todo.completed ? 'secondary' : 'outline'}>
+              {todo.completed ? 'Done' : 'Open'}
+            </Badge>
+          </div>
+          <p
+            className={`text-sm leading-6 text-muted-foreground ${
+              todo.completed ? 'line-through' : ''
+            }`}
+          >
+            {todo.description}
+          </p>
+        </div>
+        <div className='flex items-center gap-2'>
+          <Button
+            disabled={todo.completed}
+            onClick={() => markAsDone(id)}
+            variant='secondary'
+          >
+            <CheckCheck data-icon='inline-start' />
+            Mark done
+          </Button>
+          <Button
+            aria-label={`Delete ${todo.title}`}
+            onClick={() => deleteTodoHandler(id)}
+            size='icon'
+            variant='ghost'
+          >
+            <Trash2 />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

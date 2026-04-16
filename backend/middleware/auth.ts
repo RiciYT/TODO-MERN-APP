@@ -17,9 +17,16 @@ const userMiddleware = (req: Request, res: Response, next: NextFunction) => {
       return;
     }
 
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('JWT_SECRET is not defined in environment variables');
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+
     const decoded: jwt.JwtPayload | string = jwt.verify(
       token,
-      process.env.JWT_SECRET as string
+      jwtSecret
     );
 
     if (!decoded) {

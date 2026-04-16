@@ -42,7 +42,12 @@ const userSignin = async (req: Request, res: Response) => {
     );
 
     if (passwordValidates) {
-      const token = jwt.sign({ email }, process.env.JWT_SECRET as string);
+      const jwtSecret = process.env.JWT_SECRET;
+      if (!jwtSecret) {
+        console.error("JWT_SECRET is not defined in environment variables");
+        return res.status(500).json({ error: "Internal server error" });
+      }
+      const token = jwt.sign({ email }, jwtSecret);
       res.status(200).json({ token });
     } else return res.status(401).json({ error: "Wrong email or password" });
   }

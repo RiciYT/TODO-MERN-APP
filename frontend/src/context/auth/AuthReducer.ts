@@ -5,9 +5,28 @@ import {
   GET_USER,
   AUTH_FAIL,
   CLEAR_ERROR,
+  SET_LOADING,
 } from '../types';
+import type { User } from '@/types/user';
 
-export default (state: any, action: any) => {
+type AuthState = {
+  user: User | null;
+  loading: boolean;
+  isRegistered: boolean;
+  isAuthenticated: boolean;
+  error: string | null;
+};
+
+type AuthAction =
+  | { type: typeof GET_USER; payload: User }
+  | { type: typeof SIGNUP_USER; payload: unknown }
+  | { type: typeof LOGIN_USER; payload: { token: string } }
+  | { type: typeof LOGOUT_USER }
+  | { type: typeof AUTH_FAIL; payload: string | null }
+  | { type: typeof CLEAR_ERROR }
+  | { type: typeof SET_LOADING };
+
+function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
     case GET_USER:
       return {
@@ -23,6 +42,13 @@ export default (state: any, action: any) => {
         isRegistered: true,
         loading: false,
       };
+
+    case SET_LOADING:
+      return {
+        ...state,
+        loading: true,
+      };
+
     case LOGIN_USER:
       localStorage.setItem('token', action.payload.token);
       return {
@@ -37,11 +63,10 @@ export default (state: any, action: any) => {
       localStorage.removeItem('token');
       return {
         ...state,
-        token: null,
         isAuthenticated: false,
         user: null,
         loading: false,
-        error: action.payload ? action.payload : null,
+        error: 'payload' in action ? action.payload : null,
       };
 
     case CLEAR_ERROR:
@@ -49,7 +74,10 @@ export default (state: any, action: any) => {
         ...state,
         error: null,
       };
+
     default:
       return state;
   }
-};
+}
+
+export default authReducer;

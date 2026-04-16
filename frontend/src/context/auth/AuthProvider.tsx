@@ -1,5 +1,5 @@
-import { useEffect, useReducer } from 'react';
-import axios from 'axios';
+import { ReactNode, useCallback, useEffect, useReducer } from 'react';
+import axios, { AxiosError } from 'axios';
 
 import setAuthToken from '../../utils/SetAuthToken';
 import {
@@ -15,21 +15,32 @@ import AuthReducer from './AuthReducer';
 import AuthContext from './AuthContext';
 import { User } from '../../types/user';
 
-const AuthProvider = (props: any) => {
+type AuthProviderProps = {
+  children: ReactNode;
+};
+
+type AuthErrorResponse = {
+  error: string;
+};
+
+const AuthProvider = ({ children }: AuthProviderProps) => {
   const initialState = {
     user: null,
     loading: false,
     isRegistered: false,
     isAuthenticated: false,
-    error: null,
+    error: null as string | null,
   };
 
   const [state, dispatch] = useReducer(AuthReducer, initialState);
 
-  const url = import.meta.env.VITE_BACKEND_URL; //or 'http://localhost:3001';
+  const url = import.meta.env.VITE_BACKEND_URL;
 
-  // Set token and load user
-  const loadUser = async () => {
+  const getErrorMessage = (err: unknown) =>
+    (err as AxiosError<AuthErrorResponse>).response?.data?.error ??
+    'Request failed';
+
+  const loadUser = useCallback(async () => {
     if (localStorage.token) {
       setAuthToken(localStorage.token);
     } else {
@@ -38,17 +49,16 @@ const AuthProvider = (props: any) => {
     dispatch({ type: SET_LOADING });
     try {
       const res = await axios.get(url + '/user/auth');
-      
+
       dispatch({
         type: GET_USER,
         payload: res.data,
       });
-    } catch (err: any) {
-      dispatch({ type: AUTH_FAIL, payload: err.response.data.error });
+    } catch (err: unknown) {
+      dispatch({ type: AUTH_FAIL, payload: getErrorMessage(err) });
     }
-  };
+  }, [url]);
 
-  // Signup
   const signup = async (user: User) => {
     try {
       dispatch({ type: SET_LOADING });
@@ -62,17 +72,16 @@ const AuthProvider = (props: any) => {
         type: SIGNUP_USER,
         payload: res.data,
       });
-      // await loadUser();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = getErrorMessage(err);
       dispatch({
         type: AUTH_FAIL,
-        payload: err.response.data.error,
+        payload: message,
       });
-      throw new Error(err.response.data.error);
+      throw new Error(message);
     }
   };
 
-  // Login
   const signin = async (user: User) => {
     try {
       dispatch({ type: SET_LOADING });
@@ -86,17 +95,16 @@ const AuthProvider = (props: any) => {
         type: LOGIN_USER,
         payload: res.data,
       });
-      // await loadUser();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = getErrorMessage(err);
       dispatch({
         type: AUTH_FAIL,
-        payload: err.response.data.error,
+        payload: message,
       });
-      throw new Error(err.response.data.error);
+      throw new Error(message);
     }
   };
 
-  // Logout
   const logout = () => {
     dispatch({ type: SET_LOADING });
     dispatch({ type: LOGOUT_USER });
@@ -109,8 +117,8 @@ const AuthProvider = (props: any) => {
   };
 
   useEffect(() => {
-    loadUser();
-  }, []);
+    void loadUser();
+  }, [loadUser]);
 
   return (
     <AuthContext.Provider
@@ -119,7 +127,7 @@ const AuthProvider = (props: any) => {
         user: state.user,
         isRegistered: state.isRegistered,
         isAuthenticated: state.isAuthenticated,
-        error: state.error,
+        error: state.error ?? undefined,
         signup,
         signin,
         logout,
@@ -127,7 +135,7 @@ const AuthProvider = (props: any) => {
         clearError,
       }}
     >
-      {props.children}
+      {children}
     </AuthContext.Provider>
   );
 };
